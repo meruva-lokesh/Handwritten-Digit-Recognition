@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Recognizer</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #preview { max-width: 200px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Handwritten Digit Recognition</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="uploadImage()">Predict</button>
+    <p id="result"></p>
+    <img id="preview" src="" alt="Uploaded Image" style="display:none;">
+
+    <script>
+        function uploadImage() {
+            let fileInput = document.getElementById("fileInput").files[0];
+            let formData = new FormData();
+            formData.append("file", fileInput);
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById("preview").src = e.target.result;
+                document.getElementById("preview").style.display = "block";
+            };
+            reader.readAsDataURL(fileInput);
+
+            fetch("/predict", { method: "POST", body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("result").innerText = "Predicted Digit: " + data.digit;
+                });
+        }
+    </script>
+</body>
+</html>
