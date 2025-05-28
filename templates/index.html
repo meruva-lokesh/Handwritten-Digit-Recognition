@@ -1,42 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Handwritten Digit Recognizer</title>
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digit Recognizer</title>
-    <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        #preview { max-width: 200px; margin-top: 20px; }
-    </style>
 </head>
 <body>
-    <h1>Handwritten Digit Recognition</h1>
+  <div class="container">
+    <h1>Handwritten Digit Recognizer</h1>
+    <p>Upload a 28x28 image of a digit, or any image with a single digit written on it!</p>
     <input type="file" id="fileInput" accept="image/*">
-    <button onclick="uploadImage()">Predict</button>
-    <p id="result"></p>
-    <img id="preview" src="" alt="Uploaded Image" style="display:none;">
+    <button id="uploadBtn" onclick="uploadImage()">Predict</button>
+    <button id="clearBtn" onclick="clearImage()">Clear</button>
+    <div id="preview-container">
+      <img id="preview" src="" alt="Uploaded Image" style="display:none;">
+      <div id="prediction" style="display:none;">
+        <p id="result"></p>
+        <div id="confidence"></div>
+      </div>
+    </div>
+    <div id="error" class="error"></div>
+    <footer>
+      <p>Built with Flask, TensorFlow, and ❤️</p>
+    </footer>
+  </div>
+  <script>
+    function uploadImage() {
+      let fileInput = document.getElementById("fileInput").files[0];
+      if (!fileInput) {
+        showError("Please select an image!");
+        return;
+      }
+      let formData = new FormData();
+      formData.append("file", fileInput);
 
-    <script>
-        function uploadImage() {
-            let fileInput = document.getElementById("fileInput").files[0];
-            let formData = new FormData();
-            formData.append("file", fileInput);
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById("preview").src = e.target.result;
+        document.getElementById("preview").style.display = "block";
+      };
+      reader.readAsDataURL(fileInput);
 
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById("preview").src = e.target.result;
-                document.getElementById("preview").style.display = "block";
-            };
-            reader.readAsDataURL(fileInput);
+      document.getElementById("result").innerText = "";
+      document.getElementById("confidence").innerText = "";
+      document.getElementById("prediction").style.display = "none";
+      document.getElementById("error").innerText = "";
 
-            fetch("/predict", { method: "POST", body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("result").innerText = "Predicted Digit: " + data.digit;
-                });
-        }
-    </script>
+      fetch("/predict", { method: "POST", body: formData })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            showError(data.error);
+            return;
+          }
+          document.getElementById("result").innerText = "Predicted Digit: " + data.digit;
+          document.getElementById("confidence").innerText = "Confidence: " + data.confidence + "%";
+          document.getElementById("prediction").style.display = "block";
+        })
+        .catch(err => showError("Server error: " + err));
+    }
+
+    function showError(msg) {
+      document.getElementById("error").innerText = msg;
+      document.getElementById("prediction").style.display = "none";
+    }
+
+    function clearImage() {
+      document.getElementById("fileInput").value = "";
+      document.getElementById("preview").src = "";
+      document.getElementById("preview").style.display = "none";
+      document.getElementById("result").innerText = "";
+      document.getElementById("confidence").innerText = "";
+      document.getElementById("prediction").style.display = "none";
+      document.getElementById("error").innerText = "";
+    }
+  </script>
 </body>
 </html>
